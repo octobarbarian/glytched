@@ -1,0 +1,5 @@
+{
+  "name" : "glytched",
+  "dependencies" : ["socket.io"],
+  "version" : "0.1.1"
+}
