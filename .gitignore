@@ -16,3 +16,5 @@ node_modules
 /obj/Debug
 *.suo
 /WebApp.csproj.user
+/bin
+/obj/Release
