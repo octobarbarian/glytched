@@ -10,7 +10,7 @@ var myColorIndex = Math.floor(Math.random() * 5);
 var myX = Math.floor(Math.random() * canvasWidth / rectWidth) * rectWidth;
 var myY = Math.floor(Math.random() * canvasHeight / rectHeight) * rectHeight;
 
-var socket = io.connect('http://glytched.azurewebsites.net/');
+var socket = io.connect();
 socket.on('drawRect', function (data) {
     drawRect(data.x, data.y, data.colorIndex, false);
 });
