@@ -1,18 +1,14 @@
 var express = require('express');
 var app = express();
+var server = require('http').createServer(app);
+var io = require('socket.io').listen(server);
+
+server.listen(process.env.PORT || 8080);
 
 app.get('/', function(req, res) {
     res.sendfile(__dirname + '/public/index.html');
 });
-
 app.use(express.static(__dirname + '/public'));
-
-
-var server = require('http').createServer(app);
-server.listen(process.env.PORT || 8080);
-
-var io = require('socket.io');
-io = io.listen(server);
 
 io.sockets.on('connection', function (socket) {
     socket.on('drawRect', function (data) {
@@ -21,4 +17,3 @@ io.sockets.on('connection', function (socket) {
         socket.broadcast.emit('drawRect', data);
     })
 })
-
