@@ -10,14 +10,22 @@ var myColorIndex = Math.floor(Math.random() * 5);
 var myX = Math.floor(Math.random() * canvasWidth / rectWidth) * rectWidth;
 var myY = Math.floor(Math.random() * canvasHeight / rectHeight) * rectHeight;
 
-drawRect(myX, myY, myColorIndex);
+var socket = io.connect('http://glytched.azurewebsites.net/');
+socket.on('drawRect', function (data) {
+    drawRect(data.x, data.y, data.colorIndex, false);
+});
 
-function drawRect(x, y, colorIndex) {
+drawRect(myX, myY, myColorIndex, true);
+
+function drawRect(x, y, colorIndex, doBroadcast) {
     ctx.beginPath();
     ctx.rect(x, y, rectWidth, rectHeight);
     ctx.closePath();
     ctx.fillStyle = colors[colorIndex];
     ctx.fill();
+    if (doBroadcast) {
+        socket.emit('drawRect', { x: myX, y: myY, colorIndex: myColorIndex });    
+    }
 }
 
 function doMove(direction) {
@@ -37,7 +45,7 @@ function doMove(direction) {
         myColorIndex = myColorIndex + 1;
         if (myColorIndex >= colors.length) { myColorIndex = 0; }
     }
-    drawRect(myX, myY, myColorIndex);
+    drawRect(myX, myY, myColorIndex, true);
 }
 
 Mousetrap.bind('left', function() { doMove('left'); });
