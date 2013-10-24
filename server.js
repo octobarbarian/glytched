@@ -10,6 +10,10 @@ app.get('/', function(req, res) {
 });
 app.use(express.static(__dirname + '/public'));
 
+io.configure(function () {
+  io.set('transports', ['xhr-polling']);
+});
+
 io.sockets.on('connection', function (socket) {
     socket.on('drawRect', function (data) {
         console.log('Relaying drawRect message with the following data:')
