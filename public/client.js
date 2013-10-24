@@ -5,19 +5,18 @@ var ctx = canvas.getContext("2d");
 
 var rectWidth = 25;
 var rectHeight = 25;
-var colors = ['#FF0000', '#00C000', '#0000FF', '#000000',
-              '#FF8000', '#FF00FF', '#00C0C0', '#808080', '#FFFFFF'];
-var myColor = colors[Math.floor(Math.random() * 8)];
+var colors = ['#FF0000', '#00F000', '#0000FF', '#FFF000', '#000000', '#FFFFFF'];
+var myColorIndex = Math.floor(Math.random() * 5);
 var myX = Math.floor(Math.random() * canvasWidth / rectWidth) * rectWidth;
 var myY = Math.floor(Math.random() * canvasHeight / rectHeight) * rectHeight;
 
-drawRect(myX, myY, myColor);
+drawRect(myX, myY, myColorIndex);
 
-function drawRect(x, y, color) {
+function drawRect(x, y, colorIndex) {
     ctx.beginPath();
     ctx.rect(x, y, rectWidth, rectHeight);
     ctx.closePath();
-    ctx.fillStyle = color;
+    ctx.fillStyle = colors[colorIndex];
     ctx.fill();
 }
 
@@ -35,9 +34,10 @@ function doMove(direction) {
         myY = myY + rectHeight;
         if (myY >= canvasHeight) { myY = 0; }
     } else if (direction === 'color') {
-        myColor = colors[Math.floor(Math.random() * 9)];
+        myColorIndex = myColorIndex + 1;
+        if (myColorIndex >= colors.length) { myColorIndex = 0; }
     }
-    drawRect(myX, myY, myColor);
+    drawRect(myX, myY, myColorIndex);
 }
 
 Mousetrap.bind('left', function() { doMove('left'); });
