@@ -1,17 +1,21 @@
 var canvas = document.getElementById('theCanvas');
+var canvasWidth = canvas.getAttribute('width');
+var canvasHeight = canvas.getAttribute('height');
 var ctx = canvas.getContext("2d");
 
+var rectWidth = 25;
+var rectHeight = 25;
 var colors = ['#FF0000', '#00C000', '#0000FF', '#000000',
-              '#FF8000', '#FF00FF', '#00C0C0', '#808080'];
+              '#FF8000', '#FF00FF', '#00C0C0', '#808080', '#FFFFFF'];
 var myColor = colors[Math.floor(Math.random() * 8)];
-var myX = 200;
-var myY = 200;
+var myX = Math.floor(Math.random() * canvasWidth / rectWidth) * rectWidth;
+var myY = Math.floor(Math.random() * canvasHeight / rectHeight) * rectHeight;
 
 drawRect(myX, myY, myColor);
 
 function drawRect(x, y, color) {
     ctx.beginPath();
-    ctx.rect(x, y, 10, 10);
+    ctx.rect(x, y, rectWidth, rectHeight);
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.fill();
@@ -19,15 +23,19 @@ function drawRect(x, y, color) {
 
 function doMove(direction) {
     if (direction === 'left') {
-        myX = myX - 10;
+        myX = myX - rectWidth;
+        if (myX < 0) { myX = canvasWidth - rectWidth; }
     } else if (direction === 'right') {
-        myX = myX + 10;
+        myX = myX + rectWidth;
+        if (myX >= canvasWidth) { myX = 0; }
     } else if (direction === 'up') {
-        myY = myY - 10;
+        myY = myY - rectHeight;
+        if (myY < 0) { myY = canvasHeight - rectHeight; }
     } else if (direction === 'down') {
-        myY = myY + 10;
+        myY = myY + rectHeight;
+        if (myY >= canvasHeight) { myY = 0; }
     } else if (direction === 'color') {
-        myColor = colors[Math.floor(Math.random() * 8)];
+        myColor = colors[Math.floor(Math.random() * 9)];
     }
     drawRect(myX, myY, myColor);
 }
