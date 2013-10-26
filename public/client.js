@@ -5,21 +5,38 @@ var ctx = canvas.getContext("2d");
 
 var rectWidth = 25;
 var rectHeight = 25;
+var xWidth = GRID_WIDTH;
+var yHeight = GRID_HEIGHT;
 var colors = ['#FF0000', '#00F000', '#0000FF', '#FFF000', '#000000', '#FFFFFF'];
 var myColorIndex = Math.floor(Math.random() * 5);
-var myX = Math.floor(Math.random() * canvasWidth / rectWidth) * rectWidth;
-var myY = Math.floor(Math.random() * canvasHeight / rectHeight) * rectHeight;
+var myX = Math.floor(Math.random() * xWidth);
+var myY = Math.floor(Math.random() * yHeight);
 
 var socket = io.connect();
+
+// first, record our own cursor
+drawRect(myX, myY, myColorIndex, true);
+
+// ask for the grid when we first start up
+socket.emit('hello');
+
+// when we get the grid, draw it on screen
+socket.on('hello', function (grid) {
+    for (var x = 0; x < GRID_WIDTH; x++) {
+        for (var y = 0; y < GRID_HEIGHT; y++) {
+            drawRect(x, y, grid[x][y], false);
+        }
+    }
+});
+
+// when the server tells us to draw something, draw it
 socket.on('drawRect', function (data) {
     drawRect(data.x, data.y, data.colorIndex, false);
 });
 
-drawRect(myX, myY, myColorIndex, true);
-
 function drawRect(x, y, colorIndex, doBroadcast) {
     ctx.beginPath();
-    ctx.rect(x, y, rectWidth, rectHeight);
+    ctx.rect(x * rectWidth, y * rectHeight, rectWidth, rectHeight);
     ctx.closePath();
     ctx.fillStyle = colors[colorIndex];
     ctx.fill();
@@ -30,17 +47,17 @@ function drawRect(x, y, colorIndex, doBroadcast) {
 
 function doMove(direction) {
     if (direction === 'left') {
-        myX = myX - rectWidth;
-        if (myX < 0) { myX = canvasWidth - rectWidth; }
+        myX = myX - 1;
+        if (myX < 0) { myX = xWidth - 1; }
     } else if (direction === 'right') {
-        myX = myX + rectWidth;
-        if (myX >= canvasWidth) { myX = 0; }
+        myX = myX + 1;
+        if (myX >= xWidth) { myX = 0; }
     } else if (direction === 'up') {
-        myY = myY - rectHeight;
-        if (myY < 0) { myY = canvasHeight - rectHeight; }
+        myY = myY - 1;
+        if (myY < 0) { myY = yHeight - 1; }
     } else if (direction === 'down') {
-        myY = myY + rectHeight;
-        if (myY >= canvasHeight) { myY = 0; }
+        myY = myY + 1;
+        if (myY >= yHeight) { myY = 0; }
     } else if (direction === 'color') {
         myColorIndex = myColorIndex + 1;
         if (myColorIndex >= colors.length) { myColorIndex = 0; }
