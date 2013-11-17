@@ -1,113 +1,128 @@
-var canvas = document.getElementById('theCanvas');
-var canvasWidth = canvas.getAttribute('width');
-var canvasHeight = canvas.getAttribute('height');
-var ctx = canvas.getContext("2d");
+var SCALE = 4;
+var TILE_ORIG_WIDTH = 16;
+var TILE_ORIG_HEIGHT = 16;
+var TILE_WIDTH = TILE_ORIG_WIDTH * 4;
+var TILE_HEIGHT = TILE_ORIG_HEIGHT * 4;
+var WINDOW_TILE_WIDTH = 9;
+var WINDOW_TILE_HEIGHT = 9;
+var WINDOW_WIDTH = WINDOW_TILE_WIDTH * TILE_WIDTH;
+var WINDOW_HEIGHT = WINDOW_TILE_HEIGHT * TILE_HEIGHT;
 
-var rectWidth = Math.floor(canvasWidth / GRID_WIDTH);
-var rectHeight = Math.floor(canvasHeight / GRID_HEIGHT);
-
-var colors = ['#FF0000', '#00F000', '#0000FF', '#FFF000', '#000000', '#FFFFFF'];
-
-var myX = Math.floor(Math.random() * GRID_WIDTH);
-var myY = Math.floor(Math.random() * GRID_HEIGHT);
-var myColorIndex = Math.floor(Math.random() * 5);
-var invalidated = true;
-
-var gridctx = document.getElementById('theGridLines').getContext("2d");
-drawGridLines(gridctx);
-
+/*
 var socket = io.connect();
-
-// first, record our own cursor
-drawRect(myX, myY, myColorIndex, true);
-
-// ask for the grid when we first start up
 socket.emit('hello');
-
-// when we get the grid, draw it on screen
 socket.on('hello', function (grid) {
     theGrid = grid;
 });
+*/
 
-// when the server tells us to draw something, draw it
-socket.on('drawRect', function (data) {
-    drawRect(data.x, data.y, data.colorIndex, false);
-});
+var stage, animation;
 
-window.requestFrame(refreshCanvas);
+var currentDirection = 'still';
+Mousetrap.bind('left', function() { currentDirection='left'; });
+Mousetrap.bind('right', function() { currentDirection='right'; });
+Mousetrap.bind('up', function() { currentDirection='up'; });
+Mousetrap.bind('down', function() { currentDirection='down'; });
 
-function refreshCanvas(time) {
-    window.requestFrame(refreshCanvas);
-    if (invalidated) {
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        drawGrid();
-        invalidated = false;
+function init() {
+    var canvas = document.getElementById('theCanvas');
+    canvas.setAttribute('width', WINDOW_WIDTH);
+    canvas.setAttribute('height', WINDOW_HEIGHT);
+
+    var playersImage = loadAndResize('img/players.png', SCALE);
+    var groundsImage = loadAndResize('img/grounds.png', SCALE);
+
+    stage = new createjs.Stage("theCanvas");
+			
+    var data = {
+	    images: [playersImage],
+	    frames: {width:TILE_WIDTH, height:TILE_HEIGHT},
+	    animations: {flower:[0,1], egg:[2,3], mouse:[4,5], hammer:[6,7], teapot:[8,9], soul:[10,11], jellyfish:[12,13], duck:[14,15], log:[16,17], pants:[18,19], umbrella:[20,21]}
+    };
+    var playerSheet = new createjs.SpriteSheet(data);
+			
+    data = {
+	    images: [groundsImage],
+	    frames: {width:TILE_WIDTH, height:TILE_HEIGHT}
+    };
+    var groundSheet = new createjs.SpriteSheet(data);
+			
+    for (var x = 0; x < WINDOW_TILE_WIDTH; x++) {
+	    for (var y = 0; y < WINDOW_TILE_HEIGHT; y++) {
+		    var background = new createjs.Sprite(groundSheet);
+		    background.x = x*TILE_WIDTH;
+		    background.y = y*TILE_HEIGHT;
+		    background.gotoAndStop(6);
+		    stage.addChild(background);
+	    }
     }
+			
+    animation = new createjs.Sprite(playerSheet, "umbrella");
+    animation.framerate = 4;
+    animation.x = TILE_WIDTH * 4;
+    animation.y = TILE_HEIGHT * 4;
+    animation.play();
+    stage.addChild(animation);
+
+    createjs.Ticker.setFPS(30);
+    createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
+    createjs.Ticker.addEventListener("tick", tick);    
 }
 
-function drawGrid() {
-    for (var x = 0; x < GRID_WIDTH; x++) {
-        for (var y = 0; y < GRID_HEIGHT; y++) {
-            ctx.beginPath();
-            ctx.rect(x * rectWidth, y * rectHeight, rectWidth, rectHeight);
-            ctx.closePath();
-            ctx.fillStyle = colors[theGrid[x][y]];
-            ctx.fill();
-        }
-    }    
+function tick(event) {
+	if (currentDirection === 'left') {
+	    animation.scaleX = 1;
+	    animation.regX = 0;
+        animation.x = animation.x - SCALE;
+	    if (animation.x < 0) { animation.x = WINDOW_WIDTH - TILE_WIDTH; }
+	} else if (currentDirection === 'right') {
+	    animation.scaleX = -1;
+	    animation.regX = TILE_WIDTH;
+        animation.x = animation.x + SCALE;
+	    if (animation.x > WINDOW_WIDTH - TILE_WIDTH) { animation.x = 0; }
+	} else if (currentDirection === 'up') {
+	    animation.y = animation.y - SCALE;
+	    if (animation.y < 0) { animation.y = WINDOW_HEIGHT - TILE_HEIGHT; }
+	} else if (currentDirection === 'down') {
+	    animation.y = animation.y + SCALE;
+	    if (animation.y > WINDOW_HEIGHT - TILE_HEIGHT) { animation.y = 0; }
+	}
+    
+	stage.update(event);
 }
 
-function drawGridLines(gridctx) {
-    gridctx.beginPath();
-    for (var x = 1; x < GRID_WIDTH; x++) {
-        gridctx.moveTo(x * rectWidth, 0);
-        gridctx.lineTo(x * rectWidth, canvasHeight);
-    }
-    for (var y = 1; y < GRID_HEIGHT; y++) {
-        gridctx.moveTo(0, y * rectHeight);
-        gridctx.lineTo(canvasWidth, y * rectHeight);
-    }
-    gridctx.closePath();
-    gridctx.strokeStyle = 'rgba(160,160,160,0.375)';
-    gridctx.stroke();
+function loadAndResize (imgUrl, scale) {
+    // Lovingly ripped off from PhobosLab at http://phoboslab.org/log/2012/09/drawing-pixels-is-hard
+	var img = new Image();
+	img.src = imgUrl;
+
+    // Note: width-height may read as 0 if image is not preloaded
+	var widthScaled = img.width * scale;
+	var heightScaled = img.height * scale;
+
+	var orig = document.createElement('canvas');
+	orig.width = img.width;
+	orig.height = img.height;
+	var origCtx = orig.getContext('2d');
+	origCtx.drawImage(img, 0, 0);
+	var origPixels = origCtx.getImageData(0, 0, img.width, img.height);
+
+	var scaled = document.createElement('canvas');
+	scaled.width = widthScaled;
+	scaled.height = heightScaled;
+	var scaledCtx = scaled.getContext('2d');
+	var scaledPixels = scaledCtx.getImageData(0, 0, widthScaled, heightScaled);
+
+	for (var y = 0; y < heightScaled; y++) {
+		for (var x = 0; x < widthScaled; x++) {
+		    var index = (Math.floor(y / scale) * img.width + Math.floor(x / scale)) * 4;
+		    var indexScaled = (y * widthScaled + x) * 4;
+		    scaledPixels.data[indexScaled] = origPixels.data[index];
+		    scaledPixels.data[indexScaled + 1] = origPixels.data[index + 1];
+		    scaledPixels.data[indexScaled + 2] = origPixels.data[index + 2];
+		    scaledPixels.data[indexScaled + 3] = origPixels.data[index + 3];
+		}
+	}
+	scaledCtx.putImageData(scaledPixels, 0, 0);
+	return scaled;
 }
-
-function drawRect(x, y, colorIndex, doBroadcast) {
-    theGrid[x][y] = colorIndex;
-    invalidated = true;
-    if (doBroadcast) {
-        socket.emit('drawRect', { x: myX, y: myY, colorIndex: myColorIndex });    
-    }
-}
-
-function doMove(direction) {
-    if (direction === 'left') {
-        myX = myX - 1;
-        if (myX < 0) { myX = GRID_WIDTH - 1; }
-    } else if (direction === 'right') {
-        myX = myX + 1;
-        if (myX >= GRID_WIDTH) { myX = 0; }
-    } else if (direction === 'up') {
-        myY = myY - 1;
-        if (myY < 0) { myY = GRID_HEIGHT - 1; }
-    } else if (direction === 'down') {
-        myY = myY + 1;
-        if (myY >= GRID_HEIGHT) { myY = 0; }
-    } else if (direction === 'color') {
-        myColorIndex = myColorIndex + 1;
-        if (myColorIndex >= colors.length) { myColorIndex = 0; }
-    }
-    drawRect(myX, myY, myColorIndex, true);
-}
-
-Mousetrap.bind('left', function() { doMove('left'); });
-Mousetrap.bind('right', function() { doMove('right'); });
-Mousetrap.bind('up', function() { doMove('up'); });
-Mousetrap.bind('down', function() { doMove('down'); });
-Mousetrap.bind('space', function() { doMove('color'); });
-
-Hammer(canvas).on('swipeleft', function (event) { doMove('left'); });
-Hammer(canvas).on('swiperight', function (event) { doMove('right'); });
-Hammer(canvas).on('swipeup', function (event) { doMove('up'); });
-Hammer(canvas).on('swipedown', function (event) { doMove('down'); });
-Hammer(canvas).on('tap', function (event) { doMove('color'); });

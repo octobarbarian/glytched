@@ -4,43 +4,33 @@
     <head>
         <meta charset="utf-8" />
         <title>glytched</title>
+        <script src="http://code.createjs.com/easeljs-0.7.0.min.js"></script>
         <script src="/mousetrap.min.js"></script>
-        <script src="/hammer.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
-        <script src="/requestframe.js"></script>
         <script src="/shared.js"></script>
+        <script src="/client.js"></script>
         <style type="text/css">
             body {
                 background-color: #C0C0C0;
             }
-            #canvasHolder {
-                position: absolute;
-                top: 40px;
-                left: 40px;
-                width: 400px;
-                height: 400px;
+            #theCanvas {
+                padding-left: 0;
+                padding-right: 0;
+                margin-top: 20px;
+                margin-left: auto;
+                margin-right: auto;
+                display: block;
                 background-color: #FFFFFF;
                 box-shadow: 10px 10px 5px #A0A0A0;
             }
-            #theCanvas {
-                position: absolute;
-                top: 0px;
-                left: 0px;
-                z-index: 1;
-            }
-            #theGridLines {
-                position: absolute;
-                top: 0px;
-                left: 0px;
-                z-index: 2;
+            img {
+                display: none;
             }
         </style>
     </head>
-    <body>
-        <div id="canvasHolder">
-            <canvas id="theCanvas" width="400" height="400"></canvas>
-            <canvas id="theGridLines" width="400" height="400"></canvas>
-        </div>
-        <script src="./client.js"></script>
+    <body onload="init()">
+        <canvas id="theCanvas" ></canvas>
+        <img src="/img/players.png" alt="players" />
+        <img src="/img/grounds.png" alt="grounds" />
     </body>
 </html>
