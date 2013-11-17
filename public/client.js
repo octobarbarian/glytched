@@ -83,6 +83,7 @@ function tick(event) {
 function handlePlayerMovement() {
     
     if (animation.x === goalX && animation.y === goalY) {
+        animation.framerate = 4;
         if (pressedDirection === 'left') {
 	        animation.scaleX = 1;
 	        animation.regX = 0;
@@ -95,8 +96,9 @@ function handlePlayerMovement() {
 	        goalY = animation.y - TILE_HEIGHT;
 	    } else if (pressedDirection === 'down') {
 	        goalY = animation.y + TILE_HEIGHT;
+	    } else {
+	        animation.framerate = 2;
 	    }
-        pressedDirection = 'still';        
     }
 
     if (animation.x < goalX) {
