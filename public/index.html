@@ -7,20 +7,40 @@
         <script src="/mousetrap.min.js"></script>
         <script src="/hammer.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
+        <script src="/requestframe.js"></script>
         <script src="/shared.js"></script>
         <style type="text/css">
             body {
                 background-color: #C0C0C0;
             }
-            #theCanvas {
+            #canvasHolder {
+                position: absolute;
+                top: 40px;
+                left: 40px;
+                width: 400px;
+                height: 400px;
                 background-color: #FFFFFF;
-                margin: 40px;
                 box-shadow: 10px 10px 5px #A0A0A0;
+            }
+            #theCanvas {
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                z-index: 1;
+            }
+            #theGridLines {
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                z-index: 2;
             }
         </style>
     </head>
     <body>
-        <canvas width="400" height="400" id="theCanvas"></canvas>
+        <div id="canvasHolder">
+            <canvas id="theCanvas" width="400" height="400"></canvas>
+            <canvas id="theGridLines" width="400" height="400"></canvas>
+        </div>
         <script src="./client.js"></script>
     </body>
 </html>

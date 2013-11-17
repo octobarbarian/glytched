@@ -1,3 +1,4 @@
+// thanks to https://github.com/borismus/osmus for this hack
 (function (exports) {
 
     var GRID_WIDTH = 16;
