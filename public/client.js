@@ -17,12 +17,18 @@ socket.on('hello', function (grid) {
 */
 
 var stage, animation;
+var goalX = Math.floor(WINDOW_TILE_WIDTH / 2) * TILE_WIDTH;
+var goalY = Math.floor(WINDOW_TILE_HEIGHT / 2) * TILE_HEIGHT;
 
-var currentDirection = 'still';
-Mousetrap.bind('left', function() { currentDirection='left'; });
-Mousetrap.bind('right', function() { currentDirection='right'; });
-Mousetrap.bind('up', function() { currentDirection='up'; });
-Mousetrap.bind('down', function() { currentDirection='down'; });
+var pressedDirection = 'still';
+Mousetrap.bind('left', function() { pressedDirection='left'; }, 'keydown');
+Mousetrap.bind('right', function() { pressedDirection='right'; }, 'keydown');
+Mousetrap.bind('up', function() { pressedDirection='up'; }, 'keydown');
+Mousetrap.bind('down', function() { pressedDirection='down'; }, 'keydown');
+Mousetrap.bind('left', function() { if(pressedDirection==='left') pressedDirection='still'; }, 'keyup');
+Mousetrap.bind('right', function() { if(pressedDirection==='right') pressedDirection='still'; }, 'keyup');
+Mousetrap.bind('up', function() { if(pressedDirection==='up') pressedDirection='still'; }, 'keyup');
+Mousetrap.bind('down', function() { if(pressedDirection==='down') pressedDirection='still'; }, 'keyup');
 
 function init() {
     var canvas = document.getElementById('theCanvas');
@@ -59,8 +65,8 @@ function init() {
 			
     animation = new createjs.Sprite(playerSheet, "umbrella");
     animation.framerate = 4;
-    animation.x = TILE_WIDTH * 4;
-    animation.y = TILE_HEIGHT * 4;
+    animation.x = goalX;
+    animation.y = goalY;
     animation.play();
     stage.addChild(animation);
 
@@ -70,25 +76,40 @@ function init() {
 }
 
 function tick(event) {
-	if (currentDirection === 'left') {
-	    animation.scaleX = 1;
-	    animation.regX = 0;
-        animation.x = animation.x - SCALE;
-	    if (animation.x < 0) { animation.x = WINDOW_WIDTH - TILE_WIDTH; }
-	} else if (currentDirection === 'right') {
-	    animation.scaleX = -1;
-	    animation.regX = TILE_WIDTH;
-        animation.x = animation.x + SCALE;
-	    if (animation.x > WINDOW_WIDTH - TILE_WIDTH) { animation.x = 0; }
-	} else if (currentDirection === 'up') {
-	    animation.y = animation.y - SCALE;
-	    if (animation.y < 0) { animation.y = WINDOW_HEIGHT - TILE_HEIGHT; }
-	} else if (currentDirection === 'down') {
-	    animation.y = animation.y + SCALE;
-	    if (animation.y > WINDOW_HEIGHT - TILE_HEIGHT) { animation.y = 0; }
-	}
+    handlePlayerMovement();
+    stage.update(event);
+}
+
+function handlePlayerMovement() {
     
-	stage.update(event);
+    if (animation.x === goalX && animation.y === goalY) {
+        if (pressedDirection === 'left') {
+	        animation.scaleX = 1;
+	        animation.regX = 0;
+	        goalX = animation.x - TILE_WIDTH;
+	    } else if (pressedDirection === 'right') {
+	        animation.scaleX = -1;
+	        animation.regX = TILE_WIDTH;
+	        goalX = animation.x + TILE_WIDTH;
+	    } else if (pressedDirection === 'up') {
+	        goalY = animation.y - TILE_HEIGHT;
+	    } else if (pressedDirection === 'down') {
+	        goalY = animation.y + TILE_HEIGHT;
+	    }
+        pressedDirection = 'still';        
+    }
+
+    if (animation.x < goalX) {
+        animation.x += SCALE;
+    } else if (animation.x > goalX) {
+        animation.x -= SCALE;
+    }
+    
+    if (animation.y < goalY) {
+        animation.y += SCALE;
+    } else if (animation.y > goalY) {
+        animation.y -= SCALE;
+    }
 }
 
 function loadAndResize (imgUrl, scale) {
