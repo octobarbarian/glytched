@@ -1,12 +1,56 @@
-var SCALE = 4;
 var TILE_ORIG_WIDTH = 16;
 var TILE_ORIG_HEIGHT = 16;
-var TILE_WIDTH = TILE_ORIG_WIDTH * 4;
-var TILE_HEIGHT = TILE_ORIG_HEIGHT * 4;
-var WINDOW_TILE_WIDTH = 9;
+var WINDOW_TILE_WIDTH = 15;
 var WINDOW_TILE_HEIGHT = 9;
-var WINDOW_WIDTH = WINDOW_TILE_WIDTH * TILE_WIDTH;
-var WINDOW_HEIGHT = WINDOW_TILE_HEIGHT * TILE_HEIGHT;
+var SCALE, TILE_WIDTH, TILE_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT;
+
+var stage, animation, goalX, goalY;
+var pressedDirection = 'still';
+
+$(function () {
+    var viewportWidth = $(window).width();
+    var viewportHeight = $(window).height();
+
+    // desired grid is 20 wide by 10 high
+    var widthScale = Math.floor(viewportWidth / TILE_ORIG_WIDTH / 20);
+    var heightScale = Math.floor(viewportHeight / TILE_ORIG_HEIGHT / 10);
+
+    SCALE = Math.min(widthScale, heightScale);
+    TILE_WIDTH = TILE_ORIG_WIDTH * SCALE;
+    TILE_HEIGHT = TILE_ORIG_HEIGHT * SCALE;
+    WINDOW_WIDTH = WINDOW_TILE_WIDTH * TILE_WIDTH;
+    WINDOW_HEIGHT = WINDOW_TILE_HEIGHT * TILE_HEIGHT;
+
+    $('#header')
+        .css('font-size', (SCALE * 10) + 'px')
+        .css('height', Math.floor(SCALE * TILE_ORIG_HEIGHT * 0.75));
+
+    $('#theCanvas')
+        .attr('width', WINDOW_WIDTH)
+        .attr('height', WINDOW_HEIGHT)
+        .css('width', WINDOW_WIDTH)
+        .css('height', WINDOW_HEIGHT);
+
+
+
+    goalX = Math.floor(WINDOW_TILE_WIDTH / 2) * TILE_WIDTH;
+    goalY = Math.floor(WINDOW_TILE_HEIGHT / 2) * TILE_HEIGHT;
+
+    Mousetrap.bind('left', function () { pressedDirection = 'left'; }, 'keydown');
+    Mousetrap.bind('right', function () { pressedDirection = 'right'; }, 'keydown');
+    Mousetrap.bind('up', function () { pressedDirection = 'up'; }, 'keydown');
+    Mousetrap.bind('down', function () { pressedDirection = 'down'; }, 'keydown');
+    Mousetrap.bind('left', function () { if (pressedDirection === 'left') pressedDirection = 'still'; }, 'keyup');
+    Mousetrap.bind('right', function () { if (pressedDirection === 'right') pressedDirection = 'still'; }, 'keyup');
+    Mousetrap.bind('up', function () { if (pressedDirection === 'up') pressedDirection = 'still'; }, 'keyup');
+    Mousetrap.bind('down', function () { if (pressedDirection === 'down') pressedDirection = 'still'; }, 'keyup');
+
+    var img = new Image();
+    $(img)
+        .load(function () { spriteSheetLoaded() })
+        .attr('src', '/img/master.png');
+});
+
 
 /*
 var socket = io.connect();
@@ -16,54 +60,33 @@ socket.on('hello', function (grid) {
 });
 */
 
-var stage, animation;
-var goalX = Math.floor(WINDOW_TILE_WIDTH / 2) * TILE_WIDTH;
-var goalY = Math.floor(WINDOW_TILE_HEIGHT / 2) * TILE_HEIGHT;
 
-var pressedDirection = 'still';
-Mousetrap.bind('left', function() { pressedDirection='left'; }, 'keydown');
-Mousetrap.bind('right', function() { pressedDirection='right'; }, 'keydown');
-Mousetrap.bind('up', function() { pressedDirection='up'; }, 'keydown');
-Mousetrap.bind('down', function() { pressedDirection='down'; }, 'keydown');
-Mousetrap.bind('left', function() { if(pressedDirection==='left') pressedDirection='still'; }, 'keyup');
-Mousetrap.bind('right', function() { if(pressedDirection==='right') pressedDirection='still'; }, 'keyup');
-Mousetrap.bind('up', function() { if(pressedDirection==='up') pressedDirection='still'; }, 'keyup');
-Mousetrap.bind('down', function() { if(pressedDirection==='down') pressedDirection='still'; }, 'keyup');
+function spriteSheetLoaded() {
 
-function init() {
-    var canvas = document.getElementById('theCanvas');
-    canvas.setAttribute('width', WINDOW_WIDTH);
-    canvas.setAttribute('height', WINDOW_HEIGHT);
-
-    var playersImage = loadAndResize('img/players.png', SCALE);
-    var groundsImage = loadAndResize('img/grounds.png', SCALE);
+    var masterSheet = loadAndResize('img/master.png', SCALE);
 
     stage = new createjs.Stage("theCanvas");
 			
     var data = {
-	    images: [playersImage],
+	    images: [masterSheet],
 	    frames: {width:TILE_WIDTH, height:TILE_HEIGHT},
-	    animations: {flower:[0,1], egg:[2,3], mouse:[4,5], hammer:[6,7], teapot:[8,9], soul:[10,11], jellyfish:[12,13], duck:[14,15], log:[16,17], pants:[18,19], umbrella:[20,21]}
+	    animations: { flower:[0,1], egg:[2,3], mouse:[4,5], hammer:[6,7],
+                      teapot:[8,9], soul:[10,11], jellyfish:[12,13], duck:[14,15],
+                      log:[16,17], pants:[18,19], umbrella:[20,21] }
     };
-    var playerSheet = new createjs.SpriteSheet(data);
-			
-    data = {
-	    images: [groundsImage],
-	    frames: {width:TILE_WIDTH, height:TILE_HEIGHT}
-    };
-    var groundSheet = new createjs.SpriteSheet(data);
+    var spriteSheet = new createjs.SpriteSheet(data);
 			
     for (var x = 0; x < WINDOW_TILE_WIDTH; x++) {
 	    for (var y = 0; y < WINDOW_TILE_HEIGHT; y++) {
-		    var background = new createjs.Sprite(groundSheet);
+		    var background = new createjs.Sprite(spriteSheet);
 		    background.x = x*TILE_WIDTH;
 		    background.y = y*TILE_HEIGHT;
-		    background.gotoAndStop(6);
+		    background.gotoAndStop(Math.floor(Math.random()*8) + 30);
 		    stage.addChild(background);
 	    }
     }
 			
-    animation = new createjs.Sprite(playerSheet, "umbrella");
+    animation = new createjs.Sprite(spriteSheet, "pants");
     animation.framerate = 4;
     animation.x = goalX;
     animation.y = goalY;

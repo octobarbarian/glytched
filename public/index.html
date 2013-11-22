@@ -4,7 +4,9 @@
     <head>
         <meta charset="utf-8" />
         <title>glytched</title>
+        <link href='http://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
         <script src="http://code.createjs.com/easeljs-0.7.0.min.js"></script>
+        <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.0.3.min.js"></script>
         <script src="/mousetrap.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
         <script src="/shared.js"></script>
@@ -13,14 +15,13 @@
             body {
                 background-color: #C0C0C0;
             }
-            #canvasContainer {
-                width: 576px;
-                height: 576px;
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                margin-left: -288px;
-                margin-top: -288px;
+            #header {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 12px;
+            }
+            #theCanvas {
+                width: 240px;
+                height: 144px;
                 background-color: #FFFFFF;
                 box-shadow: 10px 10px 5px #A0A0A0;
             }
@@ -29,11 +30,11 @@
             }
         </style>
     </head>
-    <body onload="init()">
-        <div id="canvasContainer">
-            <canvas id="theCanvas" ></canvas>
+    <body>
+        <div id="header">
+            Good job! You are now on fire.
         </div>
-        <img src="/img/players.png" alt="players" />
-        <img src="/img/grounds.png" alt="grounds" />
+        <canvas id="theCanvas" ></canvas>
+        <img id="spriteSheet" src="/img/master.png" alt="players" />
     </body>
 </html>
