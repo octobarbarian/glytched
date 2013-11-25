@@ -3,6 +3,7 @@ var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io').listen(server);
 var shared = new require('./public/shared.js');
+var game = shared.newGame();
 
 server.listen(process.env.PORT || 8080);
 
@@ -16,12 +17,18 @@ io.configure(function () {
 });
 
 io.sockets.on('connection', function (socket) {
-    socket.on('hello', function () {
-        socket.emit('hello', shared.theGrid);
-    })
-    socket.on('drawRect', function (data) {
-        shared.theGrid[data.x][data.y] = data.colorIndex;
-        console.log(data);
-        socket.broadcast.emit('drawRect', data);
-    })
-})
+    socket.on('GetGame', function () {
+        socket.emit('GetGame', game);
+    });
+    socket.on('RegisterNewPlayer', function (player) {
+        socket.broadcast.emit('RegisterNewPlayer', player);
+        game.players[player.id] = player;
+    });
+    socket.on('MovePlayer', function (data) {
+        socket.broadcast.emit('MovePlayer', {id:data.id, x:data.x, y:data.y});
+        game.players[data.id].dispX = data.x;
+        game.players[data.id].dispY = data.y;
+        game.players[data.id].goalX = data.x;
+        game.players[data.id].goalY = data.y;
+    });
+});

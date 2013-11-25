@@ -4,7 +4,7 @@ var WINDOW_TILE_WIDTH = 15;
 var WINDOW_TILE_HEIGHT = 9;
 var SCALE, TILE_WIDTH, TILE_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT;
 
-var stage, animation, goalX, goalY;
+var socket, game, stage, me, spriteSheet;
 var pressedDirection = 'still';
 
 $(function () {
@@ -31,35 +31,11 @@ $(function () {
         .css('width', WINDOW_WIDTH)
         .css('height', WINDOW_HEIGHT);
 
-
-
-    goalX = Math.floor(WINDOW_TILE_WIDTH / 2) * TILE_WIDTH;
-    goalY = Math.floor(WINDOW_TILE_HEIGHT / 2) * TILE_HEIGHT;
-
-    Mousetrap.bind('left', function () { pressedDirection = 'left'; }, 'keydown');
-    Mousetrap.bind('right', function () { pressedDirection = 'right'; }, 'keydown');
-    Mousetrap.bind('up', function () { pressedDirection = 'up'; }, 'keydown');
-    Mousetrap.bind('down', function () { pressedDirection = 'down'; }, 'keydown');
-    Mousetrap.bind('left', function () { if (pressedDirection === 'left') pressedDirection = 'still'; }, 'keyup');
-    Mousetrap.bind('right', function () { if (pressedDirection === 'right') pressedDirection = 'still'; }, 'keyup');
-    Mousetrap.bind('up', function () { if (pressedDirection === 'up') pressedDirection = 'still'; }, 'keyup');
-    Mousetrap.bind('down', function () { if (pressedDirection === 'down') pressedDirection = 'still'; }, 'keyup');
-
     var img = new Image();
     $(img)
         .load(function () { spriteSheetLoaded() })
         .attr('src', '/img/master.png');
 });
-
-
-/*
-var socket = io.connect();
-socket.emit('hello');
-socket.on('hello', function (grid) {
-    theGrid = grid;
-});
-*/
-
 
 function spriteSheetLoaded() {
 
@@ -74,66 +50,124 @@ function spriteSheetLoaded() {
                       teapot:[8,9], soul:[10,11], jellyfish:[12,13], duck:[14,15],
                       log:[16,17], pants:[18,19], umbrella:[20,21] }
     };
-    var spriteSheet = new createjs.SpriteSheet(data);
+    spriteSheet = new createjs.SpriteSheet(data);
 			
+    socket = io.connect();
+    socket.emit('GetGame');
+
+    socket.on('GetGame', function (serverGame) { gotGame(serverGame); });
+}
+
+function gotGame(serverGame) {
+
+    game = serverGame;
+
+    // draw the map
     for (var x = 0; x < WINDOW_TILE_WIDTH; x++) {
 	    for (var y = 0; y < WINDOW_TILE_HEIGHT; y++) {
 		    var background = new createjs.Sprite(spriteSheet);
 		    background.x = x*TILE_WIDTH;
 		    background.y = y*TILE_HEIGHT;
-		    background.gotoAndStop(Math.floor(Math.random()*8) + 30);
+		    background.gotoAndStop(game.map[x][y]);
 		    stage.addChild(background);
 	    }
     }
-			
-    animation = new createjs.Sprite(spriteSheet, "pants");
-    animation.framerate = 4;
-    animation.x = goalX;
-    animation.y = goalY;
-    animation.play();
-    stage.addChild(animation);
+
+    // add other players
+    socket.on('RegisterNewPlayer', function (player) { registerNewPlayer(player); });
+    for (var playerId in game.players) {
+        registerNewPlayer(game.players[playerId]);
+    }
+
+    // watch for other players to move
+    socket.on('MovePlayer', function (data) {
+        game.players[data.id].goalX = data.x;
+        game.players[data.id].goalY = data.y;
+    });
+
+    // add me
+    me = newPlayer();
+    socket.emit('RegisterNewPlayer', me);
+    registerNewPlayer(me);
+
+    Mousetrap.bind('left', function () { pressedDirection = 'left'; }, 'keydown');
+    Mousetrap.bind('right', function () { pressedDirection = 'right'; }, 'keydown');
+    Mousetrap.bind('up', function () { pressedDirection = 'up'; }, 'keydown');
+    Mousetrap.bind('down', function () { pressedDirection = 'down'; }, 'keydown');
+    Mousetrap.bind('left', function () { if (pressedDirection === 'left') pressedDirection = 'still'; }, 'keyup');
+    Mousetrap.bind('right', function () { if (pressedDirection === 'right') pressedDirection = 'still'; }, 'keyup');
+    Mousetrap.bind('up', function () { if (pressedDirection === 'up') pressedDirection = 'still'; }, 'keyup');
+    Mousetrap.bind('down', function () { if (pressedDirection === 'down') pressedDirection = 'still'; }, 'keyup');
 
     createjs.Ticker.setFPS(30);
     createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
     createjs.Ticker.addEventListener("tick", tick);    
 }
 
-function tick(event) {
-    handlePlayerMovement();
-    stage.update(event);
+function registerNewPlayer(player) {
+    player.anim = new createjs.Sprite(spriteSheet, player.face);
+    player.anim.framerate = 4;
+    player.anim.x = player.dispX * SCALE;
+    player.anim.y = player.dispY * SCALE;
+    player.anim.play();
+    stage.addChild(player.anim);
+    game.players[player.id] = player;
 }
 
-function handlePlayerMovement() {
+function tick(event) {
+    setMyDirection();
+    moveAllPlayers();
+    stage.update(event);
+    if ((createjs.Ticker.getTicks(false) % 8) === 0) {
+        socket.emit('MovePlayer', {id:me.id, x:me.dispX, y:me.dispY});
+    }
+}
+
+function setMyDirection() {
+    if (pressedDirection === 'left') {
+        me.goalX = me.dispX - 1;
+    } else if (pressedDirection === 'right') {
+        me.goalX = me.dispX + 1;
+    } else if (pressedDirection === 'up') {
+        me.goalY = me.dispY - 1;
+    } else if (pressedDirection === 'down') {
+        me.goalY = me.dispY + 1;
+    }
+}
+
+function moveAllPlayers() {
+    for (var playerId in game.players) {
+        moveOnePlayer(game.players[playerId]);
+    }
+}
+
+function moveOnePlayer(player) {
+
+    if (player.dispX === player.goalX && player.dispY === player.goalY) {
+        player.anim.framerate = 2;
+        return;
+    }
     
-    if (animation.x === goalX && animation.y === goalY) {
-        animation.framerate = 4;
-        if (pressedDirection === 'left') {
-	        animation.scaleX = 1;
-	        animation.regX = 0;
-	        goalX = animation.x - TILE_WIDTH;
-	    } else if (pressedDirection === 'right') {
-	        animation.scaleX = -1;
-	        animation.regX = TILE_WIDTH;
-	        goalX = animation.x + TILE_WIDTH;
-	    } else if (pressedDirection === 'up') {
-	        goalY = animation.y - TILE_HEIGHT;
-	    } else if (pressedDirection === 'down') {
-	        goalY = animation.y + TILE_HEIGHT;
-	    } else {
-	        animation.framerate = 2;
-	    }
+    player.anim.framerate = 4;
+
+    if (player.dispX > player.goalX) {
+        player.anim.scaleX = 1;
+        player.anim.regX = 0;
+        player.anim.x -= SCALE;
+        player.dispX -= 1;
+    } else if (player.dispX < player.goalX) {
+        player.anim.scaleX = -1;
+        player.anim.regX = TILE_WIDTH;
+        player.anim.x += SCALE;
+        player.dispX += 1;
     }
 
-    if (animation.x < goalX) {
-        animation.x += SCALE;
-    } else if (animation.x > goalX) {
-        animation.x -= SCALE;
-    }
-    
-    if (animation.y < goalY) {
-        animation.y += SCALE;
-    } else if (animation.y > goalY) {
-        animation.y -= SCALE;
+    if (player.dispY > player.goalY) {
+        player.anim.y -= SCALE;
+        player.dispY -= 1;
+    } else if (player.dispY < player.goalY) {
+        player.anim.y += SCALE;
+        player.dispY += 1;
     }
 }
 
