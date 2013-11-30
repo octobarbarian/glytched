@@ -25,10 +25,14 @@ io.sockets.on('connection', function (socket) {
         game.players[player.id] = player;
     });
     socket.on('MovePlayer', function (data) {
-        socket.broadcast.emit('MovePlayer', {id:data.id, x:data.x, y:data.y});
+        socket.broadcast.emit('MovePlayer', { id: data.id, x: data.x, y: data.y });
         game.players[data.id].dispX = data.x;
         game.players[data.id].dispY = data.y;
         game.players[data.id].goalX = data.x;
         game.players[data.id].goalY = data.y;
+    });
+    socket.on('ChangePlayerProperty', function (data) {
+        socket.broadcast.emit('ChangePlayerProperty', data);
+        (game.players[data.id])[data.property] = data.value;
     });
 });

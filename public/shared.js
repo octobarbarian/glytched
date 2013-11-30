@@ -21,6 +21,19 @@
         game.MAP_WIDTH = 20;
         game.MAP_HEIGHT = 20;
 
+        game.faces = new Array();
+        game.faces.push('flower');
+        game.faces.push('egg');
+        game.faces.push('mouse');
+        game.faces.push('hammer');
+        game.faces.push('teapot');
+        game.faces.push('soul');
+        game.faces.push('jellyfish');
+        game.faces.push('duck');
+        game.faces.push('log');
+        game.faces.push('pants');
+        game.faces.push('umbrella');
+
         game.map = new Array(game.MAP_WIDTH);
         for (var x = 0; x < game.MAP_WIDTH; x++) {
             game.map[x] = new Array(game.MAP_HEIGHT);

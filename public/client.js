@@ -80,9 +80,8 @@ function gotGame(serverGame) {
     }
 
     // watch for other players to move
-    socket.on('MovePlayer', function (data) {
-        handleMovePlayer(data);
-    });
+    socket.on('MovePlayer', function (data) { handleMovePlayer(data); });
+    socket.on('ChangePlayerProperty', function (data) { handleChangePlayerProperty(data); });
 
     // add me
     me = newPlayer();
@@ -97,9 +96,14 @@ function gotGame(serverGame) {
     Mousetrap.bind('right', function () { if (pressedDirection === 'right') pressedDirection = 'still'; }, 'keyup');
     Mousetrap.bind('up', function () { if (pressedDirection === 'up') pressedDirection = 'still'; }, 'keyup');
     Mousetrap.bind('down', function () { if (pressedDirection === 'down') pressedDirection = 'still'; }, 'keyup');
+    Mousetrap.bind('space', function () {
+        var newFace = game.faces[Math.floor(Math.random() * game.faces.length)];
+        var data = { id: me.id, property: 'face', value: newFace };
+        socket.emit('ChangePlayerProperty', data);
+        handleChangePlayerProperty(data);
+    });
 
     createjs.Ticker.setFPS(30);
-    createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
     createjs.Ticker.addEventListener("tick", tick);    
 }
 
@@ -127,16 +131,22 @@ function handleMovePlayer(data) {
     game.players[data.id].goalY = data.y;
 }
 
+function handleChangePlayerProperty(data) {
+    game.players[data.id][data.property] = data.value;
+    if (data.property === 'face') {
+        game.players[data.id].anim.gotoAndPlay(data.value);
+    }
+}
+
 function registerNewPlayer(player) {
     player.anim = new createjs.Sprite(spriteSheet, player.face);
-    player.anim.framerate = 4;
-    player.anim.x = player.dispX * SCALE;
-    player.anim.y = player.dispY * SCALE;
     player.anim.play();
     stage.addChild(player.anim);
     game.players[player.id] = player;
 }
 
+var lastTime = -1;
+var ticksSinceLastTime = 0;
 function tick(event) {
     setMyDirection();
     moveAllPlayers();
@@ -144,6 +154,14 @@ function tick(event) {
     if ((createjs.Ticker.getTicks(false) % 3) === 0) {
         socket.emit('MovePlayer', {id:me.id, x:me.dispX, y:me.dispY});
     }
+
+    var curTime = (new Date()).getTime();
+    if (curTime - lastTime >= 1000) {
+        $('#fps').html(ticksSinceLastTime.toString());
+        ticksSinceLastTime = 0;
+        lastTime = curTime;
+    }
+    ticksSinceLastTime++;
 }
 
 function setMyDirection() {
