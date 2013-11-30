@@ -81,8 +81,7 @@ function gotGame(serverGame) {
 
     // watch for other players to move
     socket.on('MovePlayer', function (data) {
-        game.players[data.id].goalX = data.x;
-        game.players[data.id].goalY = data.y;
+        handleMovePlayer(data);
     });
 
     // add me
@@ -104,6 +103,30 @@ function gotGame(serverGame) {
     createjs.Ticker.addEventListener("tick", tick);    
 }
 
+function handleMovePlayer(data) {
+    var oldX = game.players[data.id].dispX;
+    var oldY = game.players[data.id].dispY;
+
+    if (oldX < data.x) {
+        game.players[data.id].dispX = data.x - 2;
+    } else if (oldX > data.x) {
+        game.players[data.id].dispX = data.x + 2;
+    } else {
+        game.players[data.id].dispX = data.x;
+    }
+
+    if (oldY < data.y) {
+        game.players[data.id].dispY = data.y - 2;
+    } else if (oldY > data.y) {
+        game.players[data.id].dispY = data.y + 2;
+    } else {
+        game.players[data.id].dispY = data.y;
+    }
+
+    game.players[data.id].goalX = data.x;
+    game.players[data.id].goalY = data.y;
+}
+
 function registerNewPlayer(player) {
     player.anim = new createjs.Sprite(spriteSheet, player.face);
     player.anim.framerate = 4;
@@ -118,7 +141,7 @@ function tick(event) {
     setMyDirection();
     moveAllPlayers();
     stage.update(event);
-    if ((createjs.Ticker.getTicks(false) % 8) === 0) {
+    if ((createjs.Ticker.getTicks(false) % 3) === 0) {
         socket.emit('MovePlayer', {id:me.id, x:me.dispX, y:me.dispY});
     }
 }
@@ -145,30 +168,28 @@ function moveOnePlayer(player) {
 
     if (player.dispX === player.goalX && player.dispY === player.goalY) {
         player.anim.framerate = 2;
-        return;
+    } else {
+        player.anim.framerate = 4;    
     }
     
-    player.anim.framerate = 4;
-
     if (player.dispX > player.goalX) {
-        player.anim.scaleX = 1;
-        player.anim.regX = 0;
-        player.anim.x -= SCALE;
         player.dispX -= 1;
+        player.anim.scaleX = 1;
+        player.anim.regX = 0;        
     } else if (player.dispX < player.goalX) {
+        player.dispX += 1;
         player.anim.scaleX = -1;
         player.anim.regX = TILE_WIDTH;
-        player.anim.x += SCALE;
-        player.dispX += 1;
     }
 
     if (player.dispY > player.goalY) {
-        player.anim.y -= SCALE;
         player.dispY -= 1;
     } else if (player.dispY < player.goalY) {
-        player.anim.y += SCALE;
         player.dispY += 1;
     }
+
+    player.anim.x = player.dispX * SCALE;
+    player.anim.y = player.dispY * SCALE;
 }
 
 function loadAndResize (imgUrl, scale) {
