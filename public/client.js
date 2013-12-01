@@ -13,7 +13,7 @@ $(function () {
 
     // desired grid is 20 wide by 10 high
     var widthScale = Math.floor(viewportWidth / TILE_ORIG_WIDTH / 20);
-    var heightScale = Math.floor(viewportHeight / TILE_ORIG_HEIGHT / 10);
+    var heightScale = Math.floor(viewportHeight / TILE_ORIG_HEIGHT / 10.5);
 
     SCALE = Math.min(widthScale, heightScale);
     TILE_WIDTH = TILE_ORIG_WIDTH * SCALE;
@@ -23,7 +23,7 @@ $(function () {
 
     $('#header')
         .css('font-size', (SCALE * 10) + 'px')
-        .css('height', Math.floor(SCALE * TILE_ORIG_HEIGHT * 0.75));
+        .css('height', Math.floor(SCALE * TILE_ORIG_HEIGHT * 1));
 
     $('#theCanvas')
         .attr('width', WINDOW_WIDTH)
