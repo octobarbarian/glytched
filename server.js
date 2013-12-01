@@ -33,4 +33,9 @@ io.sockets.on('connection', function (socket) {
         socket.broadcast.emit('ChangePlayerProperty', data);
         (game.players[data.id])[data.property] = data.value;
     });
+    socket.on('MoveMonolith', function (data) {
+        socket.broadcast.emit('MoveMonolith', data);
+        game.monolith.x = data.x;
+        game.monolith.y = data.y;
+    });
 });

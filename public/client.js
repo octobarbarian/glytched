@@ -116,9 +116,16 @@ function gotGame(serverGame) {
     socket.on('RegisterNewPlayer', function (player) { handleRegisterNewPlayer(player); });
     socket.on('MovePlayer', function (data) { handleMovePlayer(data); });
     socket.on('ChangePlayerProperty', function (data) { handleChangePlayerProperty(data); });
+    socket.on('MoveMonolith', function (data) { handleMoveMonolith(data); });
 
     createjs.Ticker.setFPS(30);
     createjs.Ticker.addEventListener("tick", tick);    
+}
+
+function handleMoveMonolith(data) {
+    game.monolith.x = data.x;
+    game.monolith.y = data.y;
+    var sprite = anims['monolith'].sprite.alpha = 0.75;
 }
 
 function handleMovePlayer(data) {
@@ -171,6 +178,7 @@ function tick(event) {
     stage.update(event);
     
     setMyPosition();
+    animateMonolith();
     moveAllPlayers();
     if ((createjs.Ticker.getTicks(false) % 3) === 0) {
         socket.emit('MovePlayer', {id:me.id, x:me.x, y:me.y});
@@ -186,6 +194,33 @@ function setMyPosition() {
         me.y--;
     } else if (pressedDirection === 'down') {
         me.y++;
+    }
+}
+
+function animateMonolith() {
+
+    var sprite = anims['monolith'].sprite;
+
+    if (Math.abs(me.x - game.monolith.x) < (game.TILE_PIXEL_WIDTH * 0.75) &&
+        Math.abs(me.y - game.monolith.y) < (game.TILE_PIXEL_HEIGHT) ) {
+        game.monolith.x = Math.floor(Math.random() * game.MAP_WIDTH) * game.TILE_PIXEL_WIDTH;
+        game.monolith.y = Math.floor(Math.random() * game.MAP_HEIGHT) * game.TILE_PIXEL_HEIGHT;
+        socket.emit('MoveMonolith', { x: game.monolith.x, y: game.monolith.y });
+        sprite.alpha = 0.75;
+    }
+
+    if (sprite.x != game.monolith.x * SCALE || sprite.y != game.monolith.y * SCALE) {
+        if (sprite.alpha != 0) {
+            sprite.alpha -= 0.01;
+        }
+        if (sprite.alpha <= 0) {
+            sprite.x = game.monolith.x * SCALE;
+            sprite.y = game.monolith.y * SCALE;
+        }
+    } else {
+        if (sprite.alpha != 1) {
+            sprite.alpha += 0.01;
+        }
     }
 }
 
