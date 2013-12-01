@@ -4,7 +4,7 @@ var WINDOW_TILE_WIDTH = 15;
 var WINDOW_TILE_HEIGHT = 9;
 var SCALE, TILE_WIDTH, TILE_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT;
 
-var socket, game, stage, me, spriteSheet;
+var socket, game, stage, me, spriteSheet, anims;
 var pressedDirection = 'still';
 
 $(function () {
@@ -62,6 +62,7 @@ function spriteSheetLoaded() {
 function gotGame(serverGame) {
 
     game = serverGame;
+    anims = {};
 
     // draw the map
     for (var x = 0; x < WINDOW_TILE_WIDTH; x++) {
@@ -75,19 +76,14 @@ function gotGame(serverGame) {
     }
 
     // add other players
-    socket.on('RegisterNewPlayer', function (player) { registerNewPlayer(player); });
     for (var playerId in game.players) {
-        registerNewPlayer(game.players[playerId]);
+        handleRegisterNewPlayer(game.players[playerId]);
     }
-
-    // watch for other players to move
-    socket.on('MovePlayer', function (data) { handleMovePlayer(data); });
-    socket.on('ChangePlayerProperty', function (data) { handleChangePlayerProperty(data); });
 
     // add me
     me = newPlayer();
     socket.emit('RegisterNewPlayer', me);
-    registerNewPlayer(me);
+    handleRegisterNewPlayer(me);
 
     Mousetrap.bind('left', function () { pressedDirection = 'left'; }, 'keydown');
     Mousetrap.bind('right', function () { pressedDirection = 'right'; }, 'keydown');
@@ -104,56 +100,69 @@ function gotGame(serverGame) {
         handleChangePlayerProperty(data);
     });
 
+    // listen for events from other players
+    socket.on('RegisterNewPlayer', function (player) { handleRegisterNewPlayer(player); });
+    socket.on('MovePlayer', function (data) { handleMovePlayer(data); });
+    socket.on('ChangePlayerProperty', function (data) { handleChangePlayerProperty(data); });
+
     createjs.Ticker.setFPS(30);
     createjs.Ticker.addEventListener("tick", tick);    
 }
 
 function handleMovePlayer(data) {
-    var oldX = game.players[data.id].dispX;
-    var oldY = game.players[data.id].dispY;
+    var oldX = game.players[data.id].x;
+    var oldY = game.players[data.id].y;
+
+    var anim = anims[data.id];
 
     if (oldX < data.x) {
-        game.players[data.id].dispX = data.x - 2;
+        anim.dispX = data.x - 2;
     } else if (oldX > data.x) {
-        game.players[data.id].dispX = data.x + 2;
+        anim.dispX = data.x + 2;
     } else {
-        game.players[data.id].dispX = data.x;
+        anim.dispX = data.x;
     }
 
     if (oldY < data.y) {
-        game.players[data.id].dispY = data.y - 2;
+        anim.dispY = data.y - 2;
     } else if (oldY > data.y) {
-        game.players[data.id].dispY = data.y + 2;
+        anim.dispY = data.y + 2;
     } else {
-        game.players[data.id].dispY = data.y;
+        anim.dispY = data.y;
     }
 
-    game.players[data.id].goalX = data.x;
-    game.players[data.id].goalY = data.y;
+    game.players[data.id].x = data.x;
+    game.players[data.id].y = data.y;
 }
 
 function handleChangePlayerProperty(data) {
     game.players[data.id][data.property] = data.value;
     if (data.property === 'face') {
-        game.players[data.id].anim.gotoAndPlay(data.value);
+        anims[data.id].sprite.gotoAndPlay(data.value);
     }
 }
 
-function registerNewPlayer(player) {
-    player.anim = new createjs.Sprite(spriteSheet, player.face);
-    player.anim.play();
-    stage.addChild(player.anim);
+function handleRegisterNewPlayer(player) {
     game.players[player.id] = player;
+    
+    var sprite = new createjs.Sprite(spriteSheet, player.face);
+    sprite.play();
+    stage.addChild(sprite);
+
+    anims[player.id] = new Object();
+    anims[player.id].sprite = sprite;
+    anims[player.id].dispX = player.x;
+    anims[player.id].dispY = player.y;
 }
 
 var lastTime = -1;
 var ticksSinceLastTime = 0;
 function tick(event) {
-    setMyDirection();
+    setMyPosition();
     moveAllPlayers();
     stage.update(event);
     if ((createjs.Ticker.getTicks(false) % 3) === 0) {
-        socket.emit('MovePlayer', {id:me.id, x:me.dispX, y:me.dispY});
+        socket.emit('MovePlayer', {id:me.id, x:me.x, y:me.y});
     }
 
     var curTime = (new Date()).getTime();
@@ -165,15 +174,15 @@ function tick(event) {
     ticksSinceLastTime++;
 }
 
-function setMyDirection() {
+function setMyPosition() {
     if (pressedDirection === 'left') {
-        me.goalX = me.dispX - 1;
+        me.x--;
     } else if (pressedDirection === 'right') {
-        me.goalX = me.dispX + 1;
+        me.x++;
     } else if (pressedDirection === 'up') {
-        me.goalY = me.dispY - 1;
+        me.y--;
     } else if (pressedDirection === 'down') {
-        me.goalY = me.dispY + 1;
+        me.y++;
     }
 }
 
@@ -185,30 +194,32 @@ function moveAllPlayers() {
 
 function moveOnePlayer(player) {
 
-    if (player.dispX === player.goalX && player.dispY === player.goalY) {
-        player.anim.framerate = 2;
+    anim = anims[player.id];
+
+    if (player.x === anim.dispX && player.y === anim.dispY) {
+        anim.sprite.framerate = 2;
     } else {
-        player.anim.framerate = 4;    
+        anim.sprite.framerate = 4;    
     }
     
-    if (player.dispX > player.goalX) {
-        player.dispX -= 1;
-        player.anim.scaleX = 1;
-        player.anim.regX = 0;        
-    } else if (player.dispX < player.goalX) {
-        player.dispX += 1;
-        player.anim.scaleX = -1;
-        player.anim.regX = TILE_WIDTH;
+    if (anim.dispX > player.x) {
+        anim.dispX -= 1;
+        anim.sprite.scaleX = 1;
+        anim.sprite.regX = 0;        
+    } else if (anim.dispX < player.x) {
+        anim.dispX += 1;
+        anim.sprite.scaleX = -1;
+        anim.sprite.regX = TILE_WIDTH;
     }
 
-    if (player.dispY > player.goalY) {
-        player.dispY -= 1;
-    } else if (player.dispY < player.goalY) {
-        player.dispY += 1;
+    if (anim.dispY > player.y) {
+        anim.dispY -= 1;
+    } else if (anim.dispY < player.y) {
+        anim.dispY += 1;
     }
 
-    player.anim.x = player.dispX * SCALE;
-    player.anim.y = player.dispY * SCALE;
+    anim.sprite.x = anim.dispX * SCALE;
+    anim.sprite.y = anim.dispY * SCALE;
 }
 
 function loadAndResize (imgUrl, scale) {

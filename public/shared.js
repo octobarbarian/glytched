@@ -4,12 +4,10 @@
     exports.newPlayer = function () {
         var p = new Object();
         p.id = Math.random().toString(36).substring(2, 10);
-        p.dispX = 0;
-        p.dispY = 0;
-        p.goalX = 0;
-        p.goalY = 0;
-        p.anim = null;
+        p.x = 0;
+        p.y = 0;
         p.face = 'soul';
+        p.glitches = new Array();
         return p;
     };
 

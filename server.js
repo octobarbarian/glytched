@@ -26,10 +26,8 @@ io.sockets.on('connection', function (socket) {
     });
     socket.on('MovePlayer', function (data) {
         socket.broadcast.emit('MovePlayer', { id: data.id, x: data.x, y: data.y });
-        game.players[data.id].dispX = data.x;
-        game.players[data.id].dispY = data.y;
-        game.players[data.id].goalX = data.x;
-        game.players[data.id].goalY = data.y;
+        game.players[data.id].x = data.x;
+        game.players[data.id].y = data.y;
     });
     socket.on('ChangePlayerProperty', function (data) {
         socket.broadcast.emit('ChangePlayerProperty', data);
