@@ -36,13 +36,21 @@
             game.map[x] = new Array(game.MAP_HEIGHT);
             for (var y = 0; y < game.MAP_HEIGHT; y++) {
                 game.map[x][y] = 30; // grass by default
+                if (x < y * 2 - 6) { game.map[x][y] = 32; } // dirt
+                if (x > 11 && y >= 2 && y <= 4 || (x === 11 && y === 3)) { game.map[x][y] = 34; } // stone
                 if (y === 0) { game.map[x][y] = 36; } // sky
                 if ((y === 7 && x > 7) || (y === 8 && x > 5)) { game.map[x][y] = 31; } // water
                 if ((y === 6 && x > 5) || (y === 7 && x > 3 && x <= 7) || (y === 8 && x > 2 && x <= 5)) { game.map[x][y] = 37; } // sand
+
             }
         }
 
         game.players = {};
+
+        game.monolith = new Object();
+        game.monolith.x = game.TILE_PIXEL_WIDTH * 13;
+        game.monolith.y = game.TILE_PIXEL_HEIGHT * 3;
+
         return game;
     }
 

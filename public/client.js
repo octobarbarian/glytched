@@ -75,6 +75,16 @@ function gotGame(serverGame) {
 	    }
     }
 
+    // add the monolith
+    var sprite = new createjs.Sprite(spriteSheet, 'monolith');
+    sprite.x = game.monolith.x * SCALE;
+    sprite.y = game.monolith.y * SCALE;
+    sprite.framerate = 2;
+    sprite.play();
+    anims['monolith'] = new Object();
+    anims['monolith'].sprite = sprite;
+    stage.addChild(sprite);
+
     // add other players
     for (var playerId in game.players) {
         handleRegisterNewPlayer(game.players[playerId]);
@@ -82,6 +92,8 @@ function gotGame(serverGame) {
 
     // add me
     me = newPlayer();
+    me.x = game.TILE_PIXEL_WIDTH * 7;
+    me.y = game.TILE_PIXEL_HEIGHT * 4;
     socket.emit('RegisterNewPlayer', me);
     handleRegisterNewPlayer(me);
 
@@ -155,23 +167,14 @@ function handleRegisterNewPlayer(player) {
     anims[player.id].dispY = player.y;
 }
 
-var lastTime = -1;
-var ticksSinceLastTime = 0;
 function tick(event) {
+    stage.update(event);
+    
     setMyPosition();
     moveAllPlayers();
-    stage.update(event);
     if ((createjs.Ticker.getTicks(false) % 3) === 0) {
         socket.emit('MovePlayer', {id:me.id, x:me.x, y:me.y});
     }
-
-    var curTime = (new Date()).getTime();
-    if (curTime - lastTime >= 1000) {
-        $('#fps').html(ticksSinceLastTime.toString());
-        ticksSinceLastTime = 0;
-        lastTime = curTime;
-    }
-    ticksSinceLastTime++;
 }
 
 function setMyPosition() {
