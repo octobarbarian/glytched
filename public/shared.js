@@ -27,7 +27,6 @@
         game.faces.push('mouse');
         game.faces.push('hammer');
         game.faces.push('teapot');
-        game.faces.push('soul');
         game.faces.push('jellyfish');
         game.faces.push('duck');
         game.faces.push('log');

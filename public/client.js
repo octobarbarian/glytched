@@ -48,7 +48,8 @@ function spriteSheetLoaded() {
 	    frames: {width:TILE_WIDTH, height:TILE_HEIGHT},
 	    animations: { flower:[0,1], egg:[2,3], mouse:[4,5], hammer:[6,7],
                       teapot:[8,9], soul:[10,11], jellyfish:[12,13], duck:[14,15],
-                      log:[16,17], pants:[18,19], umbrella:[20,21] }
+                      log:[16,17], pants:[18,19], umbrella:[20,21], monolith:[22,23],
+                      glitch:[40,43] }
     };
     spriteSheet = new createjs.SpriteSheet(data);
 			
