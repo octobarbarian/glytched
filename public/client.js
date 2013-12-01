@@ -125,7 +125,7 @@ function gotGame(serverGame) {
 function handleMoveMonolith(data) {
     game.monolith.x = data.x;
     game.monolith.y = data.y;
-    var sprite = anims['monolith'].sprite.alpha = 0.75;
+    anims['monolith'].sprite.alpha = 0.7;
 }
 
 function handleMovePlayer(data) {
@@ -206,20 +206,21 @@ function animateMonolith() {
         game.monolith.x = Math.floor(Math.random() * game.MAP_WIDTH) * game.TILE_PIXEL_WIDTH;
         game.monolith.y = Math.floor(Math.random() * game.MAP_HEIGHT) * game.TILE_PIXEL_HEIGHT;
         socket.emit('MoveMonolith', { x: game.monolith.x, y: game.monolith.y });
-        sprite.alpha = 0.75;
+        sprite.alpha = sprite.alpha * 0.7;
     }
 
     if (sprite.x != game.monolith.x * SCALE || sprite.y != game.monolith.y * SCALE) {
         if (sprite.alpha != 0) {
-            sprite.alpha -= 0.01;
+            sprite.alpha -= 0.02;
         }
         if (sprite.alpha <= 0) {
             sprite.x = game.monolith.x * SCALE;
             sprite.y = game.monolith.y * SCALE;
+            sprite.alpha = 0;
         }
     } else {
-        if (sprite.alpha != 1) {
-            sprite.alpha += 0.01;
+        if (sprite.alpha <= 1) {
+            sprite.alpha += 0.015;
         }
     }
 }
